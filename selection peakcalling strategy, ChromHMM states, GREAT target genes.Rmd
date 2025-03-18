@@ -1,0 +1,311 @@
+---
+title: "epigenomics script"
+author: "Roberto Amarie"
+date: "2023-11-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
+# SETS COMPARISONS
+------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
+
+```{r}
+# Read data as vectors
+rep1_NO <- scan('boxplots/qval_rep1_non_overlapping_summits.bed')
+rep1_O <- scan('boxplots/qval_rep1_overlapping_summits.bed')
+
+# rep1_NO <- 10^(-rep1_NO)
+# rep1_O <- 10^(-rep1_O)
+
+# Create a list with numeric vectors
+rep1 <- list(Overlapping = rep1_O, Non_Overlapping = rep1_NO)
+
+# Create side-by-side boxplot
+boxplot(rep1, col = c("#006400", "#ffff00"),
+        main = "Replicate 1",
+        ylim=c(0,350),
+        #xlab = 'Count',
+        ylab = '-log10 q-value')
+
+
+################
+
+# Read data as vectors
+rep2_NO <- scan('boxplots/qval_rep2_non_overlapping_summits.bed')
+rep2_O <- scan('boxplots/qval_rep2_overlapping_summits.bed')
+
+# Create a list with numeric vectors
+rep2 <- list(Overlapping = rep2_O, Non_Overlapping = rep2_NO)
+
+# Create side-by-side boxplot
+boxplot(rep2, col = c("#006400", "#ffff00"),
+        main = "Replicate 2",
+        ylim=c(0,350),
+        #xlab = 'Count',
+        ylab = '-log10 q-value')
+
+################
+
+# Read data as vectors
+common_NO <- scan('boxplots/qval_common_non_overlapping_summits.bed')
+common_O <- scan('boxplots/qval_common_overlapping_summits.bed')
+
+# Create a list with numeric vectors
+common <- list(Overlapping = common_O, Non_Overlapping = common_NO)
+
+# Create side-by-side boxplot
+boxplot(common, col = c("#006400", "#ffff00"),
+        main = "Common",
+        ylim=c(0,350),
+        #xlab = 'Count',
+        ylab = '-log10 q-value')
+
+################
+
+
+# Read data as vectors
+mergedNO <- scan('boxplots/qval_merged_non_overlapping_summits.bed')
+mergedO <- scan('boxplots/qval_merged_overlapping_summits.bed')
+
+# Create a list with numeric vectors
+merged <- list(Overlapping = mergedO, Non_Overlapping = mergedNO)
+
+# Create side-by-side boxplot
+boxplot(merged, col = c("#006400", "#ffff00"),
+        main = "Merged",
+        ylim=c(0,350),
+        #xlab = 'Count',
+        ylab = '-log10 q-value')
+
+
+```
+
+
+
+
+
+------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
+# CHROM HMM STATES DISTRIBUTION
+------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
+
+```{r}
+library(grid)
+library(tidyverse)
+library(shadowtext)
+```
+
+```{r}
+chromHMM <- read.table('chromHMM/HepG2_chromHMM_merged_summits.bed', header = FALSE, stringsAsFactors = FALSE)
+colnames(chromHMM) <- c('chrom', 'chromStart','chromEnd','state','score','strand','thickStart','thickEnd','itemRgb')
+
+
+desired_order <- c("TssA", "TssFlnk", "TssFlnkU", "TssFlnkD", "Tx", "TxWk", "EnhG1", "EnhG2", "EnhA1", "EnhA2", "EnhWk",  "ZNF/Rpts", "Het", "TssBiv", "EnhBiv", "ReprPC", "ReprPCWk", "Quies")
+chromHMM$state <- factor(chromHMM$state, levels = rev(desired_order))
+
+
+betternames <- c("Active TSS", "Flanking TSS", "Flanking TSS Upstream", "Flanking TSS Downstream", "Strong Transcription", "Weak Transcription", "Genic Enhancer 1", "Genic Enhancer 2", "Active Enhancer 1", "Active Enhancer 2", "Weak Enhancer",  "ZNF Genes & Repeats", "Heterochromatin", "Bivalent/Poised TSS", "Bivalent/Poised Enhancer", "Repressed PolyComb", "Weak Repressed PolyComb", "Quiescent")
+
+
+ordered_col <- c("#ff0000", "#ff4500", "#ff4500", "#ff4500", "#008000", "#006400", "#c2e105", "#c2e105", "#ffc34d", "#ffc34d", "#ffff00",  "#66cdaa", "#8a91d0", "#cd5c5c", "#bdb76b", "#808080", "#c0c0c0", "#ffffff")
+
+
+####run this part on the console:
+
+par(mar = c(6, 8, 5, 2), mgp = c(2, 0.25, 0))
+barplot(table(chromHMM$state),
+        horiz = TRUE,
+        main = "Chromatin states associated to SOX6's merged peaks",
+        names.arg = rev(betternames),
+        xlab = 'Count',
+        #ylab = 'States',
+        col = rev(ordered_col),
+        xlim = c(0,10000), las=1,
+        cex.names = 0.6
+)
+axis(side = 1, at = seq(0, 10000, by = 1000),  labels = seq(0, 10000, by = 1000))
+abline(v = seq(0, 10000, by = 500), col = "lightgray", lty = "dashed")
+```
+   WRONG INTERCEPT
+   
+   Quies ReprPCWk   ReprPC   EnhBiv   TssBiv      Het ZNF/Rpts    EnhWk    EnhA2    EnhA1    EnhG2    EnhG1     TxWk 
+    1539      694       69      549      245      121       65     9979     1057     7084      501      581     1077 
+      Tx TssFlnkD TssFlnkU  TssFlnk     TssA 
+      84     2152     2658     3263     7760 
+      
+  GOOD INTERCEPT
+      
+   Quies ReprPCWk   ReprPC   EnhBiv   TssBiv      Het ZNF/Rpts    EnhWk    EnhA2    EnhA1    EnhG2    EnhG1     TxWk 
+    1912      702       69      565      256      126       68    10252     1069     7826      544      588     1093 
+      Tx TssFlnkD TssFlnkU  TssFlnk     TssA 
+      84     2181     2783     3354     8940 
+
+```{r}
+# Define a function to map states to broader categories
+map_to_category <- function(state) {
+  if (state %in% c("TssA", "TssFlnk", "TssFlnkU", "TssFlnkD")) {
+    return("Promoters")
+  } else if (state %in% c("Tx", "TxWk")) {
+    return("Transcribed Regions")
+  } else if (state %in% c("EnhG1", "EnhG2", "EnhA1", "EnhA2", "EnhWk")) {
+    return("Enhancers")
+  } else if (state %in% c("ZNF/Rpts")) {
+    return("ZNF/Rpts")
+  } else if (state %in% c("Het")) {
+    return("Het")
+  } else if (state %in% c("TssBiv")) {
+    return("TssBiv")
+  } else if (state %in% c("EnhBiv")) {
+    return("EnhBiv")
+  } else if (state %in% c("ReprPC", "ReprPCWk")) {
+    return("Repressed")
+  } else {
+    return("Quies")
+  }
+}
+
+
+# Apply the function to create a new column 'category'
+chromHMM$category <- sapply(chromHMM$state, map_to_category)
+
+# Order the new category variable
+category_order <- c("Promoters", "Transcribed Regions", "Enhancers", "ZNF/Rpts", "Het", "TssBiv", "EnhBiv", "Repressed", "Quies")
+chromHMM$category <- factor(chromHMM$category, levels = rev(category_order))
+
+
+
+ordered_col <- c("#ff0000", "#008000", "#ffff00",  "#66cdaa", "#8a91d0", "#cd5c5c", "#bdb76b", "#808080", "#ffffff")
+
+
+table(chromHMM$category)
+
+# Plot the barplot using the new 'category' variable
+barplot(table(chromHMM$category),
+        horiz = TRUE,
+        main = 'SOX6 Chromatin states',
+        names.arg = rev(category_order),
+        xlab = 'Count',
+        col = rev(ordered_col),
+        xlim = c(0, 20000), las = 1,
+        cex.names = 0.6
+)
+axis(side = 1, at = seq(0, 20000, by = 1000), labels = seq(0, 20000, by = 1000))
+abline(v = seq(0, 20000, by = 500), col = "lightgray", lty = "dashed")
+
+```
+
+
+------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
+ # GREAT 
+------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
+
+
+```{r}
+# Read the extracted numbers file into a character vector
+lines <- readLines("GREAT/extracted_numbers.txt")
+
+# Define a function to categorize genes based on distances within a row
+categorize_genes_within_row <- function(line) {
+  elements <- strsplit(line, "\t")[[1]]
+  
+  # Check if there is at least one element
+  if (length(elements) == 0) {
+    return("None")
+  }
+  
+  # Convert elements to numeric (ignoring non-numeric values)
+  numeric_elements <- suppressWarnings(as.numeric(elements))
+  
+  # Check for promoter, enhancer, or a mixture
+  promoter <- all(abs(numeric_elements) <= 1000, na.rm = TRUE)
+  enhancer <- all(abs(numeric_elements) > 1000, na.rm = TRUE)
+  
+  if (promoter) {
+    return("promoter")
+  } else if (enhancer) {
+    return("enhancer")
+  } else {
+    return("Both")
+  }
+}
+
+# Apply the categorization function to each line
+categories <- sapply(lines, categorize_genes_within_row)
+
+# Count the number of genes in each category
+count_promoter <- sum(categories == "promoter")
+count_enhancer <- sum(categories == "enhancer")
+count_both <- sum(categories == "Both")
+count_none <- sum(categories == "None")
+
+# Print the results
+cat("Genes with only promoter numbers:", count_promoter, "\n")
+cat("Genes with only enhancer numbers:", count_enhancer, "\n")
+cat("Genes with a mixture of both promoter and enhancer numbers:", count_both, "\n")
+cat("Genes with no numbers within 1000bp:", count_none, "\n")
+
+# Create a bar plot
+bar_heights <- c(count_promoter, count_enhancer, count_both)
+bar_labels <- c("Promoter", "Enhancer", "Both")
+
+par(mar = c(6, 6, 4, 2))
+barplot(bar_heights,
+        names.arg = bar_labels,
+        col = c("#ff0000", "#ffff00", "orange"),
+        main = "Categorization of GREAT-identified target genes",
+        sub = "by modality of SOX6-dependent regulation",
+        xlab = "Categories",
+        ylab = "Number of Genes",
+        ylim = c(0,3000),
+        las=1)
+abline(h = seq(0, 3000, by = 250), col = "lightgray", lty = "dashed")
+
+#, mgp = c(2, 0.25, 0)
+```
+
+```{r}
+############à WROOOOOONG ###################
+
+# Assuming your data is tab-separated
+data <- read.table("GREAT/R_alphabetically_ordered_GREAT_10K_gene_table.txt", header = FALSE, sep = "\t", stringsAsFactors = FALSE)
+
+# Assign meaningful column names
+colnames(data) <- c("Gene", "Peaks")
+
+# Step 2: Extract relevant information
+gene_data <- data.frame(
+  gene = gsub("\\.rep2_peak_\\d+.*", "", data$Gene),
+  position = as.numeric(gsub(".*\\(([-+]?[0-9]+)\\).*", "\\1", data$Peaks, perl = TRUE)),
+  regulated_by = ""
+)
+
+
+# Step 3: Determine regulation type
+gene_data$regulated_by[abs(gene_data$position) <= 1000] <- "Promoter"
+gene_data$regulated_by[abs(gene_data$position) > 1000] <- "Enhancer"
+
+# Step 4: Count the number of genes regulated as promoters and enhancers
+promoter_count <- sum(gene_data$regulated_by == "Promoter")
+enhancer_count <- sum(gene_data$regulated_by == "Enhancer")
+
+# Print the results
+cat("Number of genes regulated as Promoters:", promoter_count, "\n")
+cat("Number of genes regulated as Enhancers:", enhancer_count, "\n")
+
+```
+
